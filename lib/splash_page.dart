@@ -5,14 +5,21 @@ class SplashPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var widht = MediaQuery.of(context).size.width;
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            CircularProgressIndicator(),
-            SizedBox(height: 20),
-            Text('Loading...'),
+          children: [
+            Spacer(),
+            Image.asset('assets/logo.png', width: widht * 0.3),
+            Text(
+              'TMDB',
+              style: TextStyle(fontSize: 36, fontWeight: FontWeight.w800),
+            ),
+            Spacer(),
+
+            Image.asset('assets/tiketux.png', width: widht * 0.2),
           ],
         ),
       ),
