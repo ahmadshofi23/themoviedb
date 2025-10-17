@@ -6,9 +6,11 @@ import 'package:themoviedb/feature/auth/domain/entity/profile_entity.dart';
 import 'package:themoviedb/feature/auth/presentation/bloc/profile/profile_bloc.dart';
 import 'package:themoviedb/feature/auth/presentation/bloc/profile/profile_event.dart';
 import 'package:themoviedb/feature/auth/presentation/bloc/profile/profile_state.dart';
+import 'package:themoviedb/splash_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
@@ -17,6 +19,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthLoaded) {
       context.read<ProfileBloc>().add(UpdateProfileFromAuth(authState.user));
@@ -29,28 +32,33 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: BlocListener<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is AuthLoaded) {
-            context.read<ProfileBloc>().add(UpdateProfileFromAuth(state.user));
-          } else if (state is AuthInitial) {
-            context.read<ProfileBloc>().add(LoadProfile());
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginPage()),
-              (route) => false,
-            );
-          }
-        },
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<AuthBloc, AuthState>(
+            listener: (context, state) {
+              if (state is AuthLoaded) {
+                context.read<ProfileBloc>().add(
+                  UpdateProfileFromAuth(state.user),
+                );
+
+                if (state.user.isGuest) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SplashPage()),
+                    (route) => false,
+                  );
+                }
+              }
+            },
+          ),
+        ],
         child: BlocBuilder<ProfileBloc, ProfileState>(
           builder: (context, state) {
             if (state is ProfileLoading) {
               return const Center(child: CircularProgressIndicator());
             } else if (state is ProfileLoaded) {
               final profile = state.profile;
-              if (profile.isGuest) {
-                return _buildGuestState();
-              }
+              if (profile.isGuest) return _buildGuestState();
               if (profile.lastWatched.isEmpty) {
                 return _buildEmptyHistory(profile);
               }
@@ -119,7 +127,7 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (_) => const LoginPage()),
                 );
@@ -249,14 +257,14 @@ class _ProfilePageState extends State<ProfilePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.logout),
+                leading: const Icon(Icons.logout, color: Colors.red),
                 title: const Text("Log Out"),
                 subtitle: const Text(
                   "Pastikan untuk log out agar akunmu tetap aman",
                 ),
                 onTap: () {
-                  context.read<AuthBloc>().add(LogoutRequested());
                   Navigator.pop(context);
+                  context.read<AuthBloc>().add(LogoutRequested());
                 },
               ),
             ],

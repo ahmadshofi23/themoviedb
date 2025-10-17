@@ -18,7 +18,7 @@ class AuthEntity extends Equatable {
 
   factory AuthEntity.guest() => const AuthEntity(
     name: "Tamu TMDB",
-    email: "",
+    email: "tst@gmail.com",
     avatarUrl: "",
     isGuest: true,
   );

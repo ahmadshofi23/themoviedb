@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:themoviedb/feature/home/data/models/genre_models.dart';
 import 'package:themoviedb/feature/home/data/models/movie_detail_model.dart';
 import 'package:themoviedb/feature/home/data/models/movie_model.dart';
 
@@ -7,6 +8,7 @@ abstract class TmdbRemoteDataSource {
   Future<List<MovieModel>> getNowPlayingMovies();
   Future<List<MovieModel>> getTopRatedMovies();
   Future<MovieDetailModel> getMovieDetail(int id);
+  Future<List<GenreModels>> getGenres();
 }
 
 class TmdbRemoteDataSourceImpl implements TmdbRemoteDataSource {
@@ -61,5 +63,15 @@ class TmdbRemoteDataSourceImpl implements TmdbRemoteDataSource {
     } else {
       throw Exception('Gagal mengambil detail film');
     }
+  }
+
+  @override
+  Future<List<GenreModels>> getGenres() async {
+    final response = await dio.get(
+      '/genre/movie/list',
+      queryParameters: {'api_key': apiKey},
+    );
+    final results = response.data['genres'] as List;
+    return results.map((e) => GenreModels.fromJson(e)).toList();
   }
 }

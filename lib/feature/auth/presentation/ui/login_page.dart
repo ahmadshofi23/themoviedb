@@ -36,10 +36,15 @@ class _LoginPageState extends State<LoginPage> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthLoaded) {
-            // ✅ Sinkronkan user ke ProfileBloc
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.user.isGuest ? 'Masuk sebagai tamu' : 'Login berhasil',
+                ),
+              ),
+            );
             context.read<ProfileBloc>().add(UpdateProfileFromAuth(state.user));
 
-            // ✅ Arahkan ke MainPage setelah login sukses
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (_) => const MainPage()),
@@ -77,7 +82,7 @@ class _LoginPageState extends State<LoginPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: height * 0.02),
+                SizedBox(height: height * 0.04),
                 CustomTextFormField(
                   height: height,
                   title: 'Password',

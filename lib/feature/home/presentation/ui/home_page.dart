@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:themoviedb/feature/home/domain/entity/movie_category_entity.dart';
+import 'package:themoviedb/feature/home/presentation/bloc/genres/bloc/genres_bloc.dart';
 import 'package:themoviedb/feature/home/presentation/bloc/movie_bloc.dart';
 import 'package:themoviedb/feature/home/presentation/ui/trending_all_page.dart';
 import 'package:themoviedb/utils/color_palettes.dart';
@@ -21,6 +22,7 @@ class _HomePageState extends State<HomePage> {
     bloc.add(LoadMovies(MovieCategory.trending));
     bloc.add(LoadMovies(MovieCategory.nowPlaying));
     bloc.add(LoadMovies(MovieCategory.topRated));
+    context.read<GenresBloc>().add(LoadGenres());
   }
 
   @override
@@ -432,41 +434,37 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildGenreChips() {
-    final genres = [
-      "Action",
-      "Drama",
-      "Comedy",
-      "Thriller",
-      "Sci-Fi",
-      "Romance",
-      "Horror",
-      "Fantasy",
-      "Animation",
-      "Documentary",
-      "Adventure",
-      "Mystery",
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children:
-            genres
-                .map(
-                  (genre) => Chip(
-                    label: Text(genre),
-                    backgroundColor: ColorPalettes.greyColor.withOpacity(0.2),
-                    labelStyle: const TextStyle(color: Colors.black87),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 2,
-                    ),
-                  ),
-                )
-                .toList(),
-      ),
+    return BlocBuilder<GenresBloc, GenresState>(
+      builder: (context, state) {
+        if (state is GenresLoading) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (state is GenresLoaded) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children:
+                  state.genres
+                      .map(
+                        (genre) => Chip(
+                          label: Text(genre.name),
+                          backgroundColor: ColorPalettes.greyColor.withOpacity(
+                            0.2,
+                          ),
+                          labelStyle: const TextStyle(color: Colors.black87),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 2,
+                          ),
+                        ),
+                      )
+                      .toList(),
+            ),
+          );
+        }
+        return SizedBox.shrink();
+      },
     );
   }
 }

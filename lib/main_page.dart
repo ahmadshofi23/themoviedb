@@ -7,6 +7,7 @@ import 'package:themoviedb/feature/auth/presentation/bloc/profile/profile_bloc.d
 import 'package:themoviedb/feature/auth/presentation/bloc/profile/profile_event.dart';
 import 'package:themoviedb/feature/auth/presentation/ui/profile_page.dart';
 import 'package:themoviedb/feature/watchlist/ui/ui/watchlist_page.dart';
+import 'package:themoviedb/widget/custom_button_nav.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -54,30 +55,11 @@ class _MainPageState extends State<MainPage> {
           return true;
         },
         child: Scaffold(
+          extendBody: true,
           body: IndexedStack(index: _selectedIndex, children: _pages),
-          bottomNavigationBar: BottomNavigationBar(
+          bottomNavigationBar: CustomBottomNav(
             currentIndex: _selectedIndex,
             onTap: _onItemTapped,
-            selectedItemColor: Colors.blueAccent,
-            unselectedItemColor: Colors.grey,
-            type: BottomNavigationBarType.fixed,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                activeIcon: Icon(Icons.home),
-                label: 'Beranda',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.bookmark_outline),
-                activeIcon: Icon(Icons.bookmark),
-                label: 'Watchlist',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                activeIcon: Icon(Icons.person),
-                label: 'Profil',
-              ),
-            ],
           ),
         ),
       ),

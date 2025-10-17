@@ -38,6 +38,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     ContinueAsGuest event,
     Emitter<AuthState> emit,
   ) async {
+    emit(AuthLoading());
+    await Future.delayed(const Duration(milliseconds: 300));
     emit(AuthLoaded(AuthEntity.guest()));
   }
 
