@@ -1,122 +1,94 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dio/dio.dart';
+import 'package:themoviedb/feature/auth/data/datasources/dummy_auth_repository.dart';
+import 'package:themoviedb/feature/auth/domain/repository/auth_repository.dart';
+import 'package:themoviedb/feature/auth/presentation/bloc/auth/auth_bloc.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'package:themoviedb/feature/home/data/datasources/tmdb_remote_data_source.dart';
+import 'package:themoviedb/feature/home/data/repositories/movie_repository_impl.dart';
+import 'package:themoviedb/feature/home/domain/usecase/get_movie_detail.dart';
+import 'package:themoviedb/feature/home/domain/usecase/get_movies.dart';
+import 'package:themoviedb/feature/home/presentation/bloc/detail_movie/movie_detail_bloc.dart';
+import 'package:themoviedb/feature/home/presentation/bloc/movie_bloc.dart';
+import 'package:themoviedb/feature/auth/presentation/bloc/profile/profile_event.dart';
+
+import 'package:themoviedb/feature/watchlist/data/datasources/local_watchlist_data_source.dart';
+import 'package:themoviedb/feature/watchlist/data/repositories/watchlist_repository_impl.dart';
+import 'package:themoviedb/feature/watchlist/domain/usecases/watchlist_usecase.dart';
+
+import 'package:themoviedb/feature/auth/presentation/bloc/profile/profile_bloc.dart';
+import 'package:themoviedb/feature/watchlist/ui/bloc/watchlist_bloc.dart';
+
+// 🏠 Main Page
+import 'package:themoviedb/main_page.dart';
+import 'package:themoviedb/utils/color_palettes.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: 'https://api.themoviedb.org/3',
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      responseType: ResponseType.json,
+    ),
+  );
+
+  const apiKey = 'aaaecd5bf657119dd69ae2cda63780f3';
+
+  final remoteDataSource = TmdbRemoteDataSourceImpl(dio, apiKey);
+  final localWatchlistDataSource = WatchlistLocalDataSource();
+
+  final movieRepository = MovieRepositoryImpl(remoteDataSource);
+  final watchlistRepository = WatchlistRepositoryImpl(localWatchlistDataSource);
+  final AuthRepository authRepository = DummyAuthRepository();
+
+  final getMovies = GetMovies(movieRepository);
+  final getMovieDetail = GetMovieDetail(movieRepository);
+  final watchlistUsecase = WatchlistUsecase(watchlistRepository);
+
+  runApp(
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider.value(value: getMovies),
+        RepositoryProvider.value(value: getMovieDetail),
+        RepositoryProvider.value(value: watchlistUsecase),
+        RepositoryProvider.value(value: authRepository),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) => AuthBloc(authRepository)..add(CheckAuthStatus()),
+          ),
+          BlocProvider(create: (_) => ProfileBloc()..add(LoadProfile())),
+          BlocProvider(create: (_) => MovieBloc(getMovies)),
+          BlocProvider(create: (_) => MovieDetailBloc(getMovieDetail)),
+          BlocProvider(create: (_) => WatchlistBloc(usecase: watchlistUsecase)),
+        ],
+        child: const TMDBApp(),
+      ),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class TMDBApp extends StatelessWidget {
+  const TMDBApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'The Movie DB',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        scaffoldBackgroundColor: ColorPalettes.secondaryColor,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: ColorPalettes.primaryColor,
         ),
+        useMaterial3: true,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      home: const MainPage(),
     );
   }
 }
